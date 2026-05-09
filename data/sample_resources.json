@@ -1,0 +1,202 @@
+[
+  {
+    "title": "Khan Academy: Precalculus",
+    "description": "Complete precalculus course covering trigonometry, complex numbers, vectors, and matrices. Perfect foundation before calculus.",
+    "url": "https://www.khanacademy.org/math/precalculus",
+    "resource_type": "course",
+    "difficulty": "beginner",
+    "topics": ["precalculus", "trigonometry", "functions", "algebra"],
+    "provider": "Khan Academy",
+    "estimated_minutes": 1200
+  },
+  {
+    "title": "Khan Academy: Calculus 1",
+    "description": "Limits, derivatives, and integrals. Interactive exercises and videos covering single-variable calculus from the ground up.",
+    "url": "https://www.khanacademy.org/math/calculus-1",
+    "resource_type": "course",
+    "difficulty": "beginner",
+    "topics": ["calculus", "limits", "derivatives", "integrals"],
+    "provider": "Khan Academy",
+    "estimated_minutes": 2400
+  },
+  {
+    "title": "Khan Academy: Calculus 2",
+    "description": "Integration techniques, series, and parametric equations. Continuation of Calculus 1.",
+    "url": "https://www.khanacademy.org/math/calculus-2",
+    "resource_type": "course",
+    "difficulty": "intermediate",
+    "topics": ["calculus", "integration", "series", "sequences"],
+    "provider": "Khan Academy",
+    "estimated_minutes": 1800
+  },
+  {
+    "title": "3Blue1Brown: Essence of Calculus",
+    "description": "Beautiful visual explanations of calculus concepts. Builds deep intuition about derivatives, integrals, and the fundamental theorem.",
+    "url": "https://www.youtube.com/playlist?list=PLZHQObOWTQDMsr9K-rj53DwVRMYO3t5Yr",
+    "resource_type": "video",
+    "difficulty": "beginner",
+    "topics": ["calculus", "derivatives", "integrals", "visualization"],
+    "provider": "3Blue1Brown",
+    "estimated_minutes": 180
+  },
+  {
+    "title": "3Blue1Brown: Essence of Linear Algebra",
+    "description": "Visual, intuitive understanding of vectors, linear transformations, eigenvalues and more. Essential for advanced math.",
+    "url": "https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab",
+    "resource_type": "video",
+    "difficulty": "intermediate",
+    "topics": ["linear algebra", "vectors", "matrices", "eigenvalues"],
+    "provider": "3Blue1Brown",
+    "estimated_minutes": 200
+  },
+  {
+    "title": "MIT OpenCourseWare: Single Variable Calculus",
+    "description": "Full MIT course with lectures, problem sets, and exams. Rigorous treatment of single-variable calculus.",
+    "url": "https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/",
+    "resource_type": "course",
+    "difficulty": "intermediate",
+    "topics": ["calculus", "limits", "derivatives", "integrals", "applications"],
+    "provider": "MIT OCW",
+    "estimated_minutes": 3600
+  },
+  {
+    "title": "MIT OpenCourseWare: Multivariable Calculus",
+    "description": "Full MIT course covering partial derivatives, multiple integrals, vector calculus. Builds on single-variable calculus.",
+    "url": "https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/",
+    "resource_type": "course",
+    "difficulty": "advanced",
+    "topics": ["multivariable calculus", "partial derivatives", "vector calculus", "surface integrals"],
+    "provider": "MIT OCW",
+    "estimated_minutes": 3600
+  },
+  {
+    "title": "Paul's Online Math Notes: Calculus I",
+    "description": "Comprehensive, well-organized notes covering limits, derivatives, and integrals with worked examples.",
+    "url": "https://tutorial.math.lamar.edu/Classes/CalcI/CalcI.aspx",
+    "resource_type": "article",
+    "difficulty": "beginner",
+    "topics": ["calculus", "limits", "derivatives", "integrals"],
+    "provider": "Lamar University",
+    "estimated_minutes": 600
+  },
+  {
+    "title": "Paul's Online Math Notes: Calculus II",
+    "description": "Integration techniques, sequences, series, parametric equations, and polar coordinates.",
+    "url": "https://tutorial.math.lamar.edu/Classes/CalcII/CalcII.aspx",
+    "resource_type": "article",
+    "difficulty": "intermediate",
+    "topics": ["calculus", "integration techniques", "series", "polar coordinates"],
+    "provider": "Lamar University",
+    "estimated_minutes": 600
+  },
+  {
+    "title": "Paul's Online Math Notes: Calculus III",
+    "description": "Three-dimensional space, vectors, partial derivatives, multiple integrals, and vector calculus.",
+    "url": "https://tutorial.math.lamar.edu/Classes/CalcIII/CalcIII.aspx",
+    "resource_type": "article",
+    "difficulty": "advanced",
+    "topics": ["multivariable calculus", "vectors", "partial derivatives", "multiple integrals"],
+    "provider": "Lamar University",
+    "estimated_minutes": 600
+  },
+  {
+    "title": "Professor Leonard: Calculus 1 (Full Lectures)",
+    "description": "Complete university calculus course recorded live. Detailed explanations with many examples.",
+    "url": "https://www.youtube.com/playlist?list=PLF797E961509B4EB5",
+    "resource_type": "video",
+    "difficulty": "beginner",
+    "topics": ["calculus", "limits", "derivatives", "integrals"],
+    "provider": "Professor Leonard",
+    "estimated_minutes": 2400
+  },
+  {
+    "title": "Desmos Graphing Calculator",
+    "description": "Free online graphing calculator. Essential tool for visualizing functions, derivatives, and integrals.",
+    "url": "https://www.desmos.com/calculator",
+    "resource_type": "tool",
+    "difficulty": "beginner",
+    "topics": ["graphing", "functions", "visualization", "calculus"],
+    "provider": "Desmos",
+    "estimated_minutes": 0
+  },
+  {
+    "title": "Symbolab: Step-by-Step Calculator",
+    "description": "Shows step-by-step solutions for calculus problems including derivatives, integrals, and limits.",
+    "url": "https://www.symbolab.com/",
+    "resource_type": "tool",
+    "difficulty": "beginner",
+    "topics": ["calculus", "algebra", "step-by-step solutions"],
+    "provider": "Symbolab",
+    "estimated_minutes": 0
+  },
+  {
+    "title": "Brilliant.org: Calculus Fundamentals",
+    "description": "Interactive, problem-based approach to learning calculus. Great for building intuition through doing.",
+    "url": "https://brilliant.org/courses/calculus-done-right/",
+    "resource_type": "course",
+    "difficulty": "beginner",
+    "topics": ["calculus", "limits", "derivatives", "problem-solving"],
+    "provider": "Brilliant",
+    "estimated_minutes": 900
+  },
+  {
+    "title": "Khan Academy: Algebra Basics",
+    "description": "Foundation algebra skills needed before calculus. Variables, equations, functions, and graphs.",
+    "url": "https://www.khanacademy.org/math/algebra",
+    "resource_type": "course",
+    "difficulty": "beginner",
+    "topics": ["algebra", "equations", "functions", "graphs"],
+    "provider": "Khan Academy",
+    "estimated_minutes": 1500
+  },
+  {
+    "title": "Khan Academy: Statistics & Probability",
+    "description": "Descriptive statistics, probability, distributions, and inference. Useful complement to calculus.",
+    "url": "https://www.khanacademy.org/math/statistics-probability",
+    "resource_type": "course",
+    "difficulty": "intermediate",
+    "topics": ["statistics", "probability", "distributions", "inference"],
+    "provider": "Khan Academy",
+    "estimated_minutes": 1200
+  },
+  {
+    "title": "MIT OCW: Linear Algebra (Gilbert Strang)",
+    "description": "Classic MIT course by Gilbert Strang. Covers systems of equations, vector spaces, determinants, eigenvalues.",
+    "url": "https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/",
+    "resource_type": "course",
+    "difficulty": "intermediate",
+    "topics": ["linear algebra", "matrices", "vector spaces", "eigenvalues"],
+    "provider": "MIT OCW",
+    "estimated_minutes": 3000
+  },
+  {
+    "title": "Wolfram Alpha",
+    "description": "Computational knowledge engine. Solve equations, compute derivatives/integrals, and verify answers.",
+    "url": "https://www.wolframalpha.com/",
+    "resource_type": "tool",
+    "difficulty": "beginner",
+    "topics": ["computation", "calculus", "algebra", "verification"],
+    "provider": "Wolfram",
+    "estimated_minutes": 0
+  },
+  {
+    "title": "GeoGebra: Math Tools",
+    "description": "Free, interactive math tools for graphing, geometry, algebra, calculus, and more.",
+    "url": "https://www.geogebra.org/",
+    "resource_type": "tool",
+    "difficulty": "beginner",
+    "topics": ["geometry", "algebra", "calculus", "visualization"],
+    "provider": "GeoGebra",
+    "estimated_minutes": 0
+  },
+  {
+    "title": "Stewart Calculus: Early Transcendentals",
+    "description": "The most widely used calculus textbook. Comprehensive coverage with excellent exercises.",
+    "url": "https://www.stewartcalculus.com/",
+    "resource_type": "book",
+    "difficulty": "intermediate",
+    "topics": ["calculus", "limits", "derivatives", "integrals", "applications"],
+    "provider": "Cengage",
+    "estimated_minutes": 6000
+  }
+]

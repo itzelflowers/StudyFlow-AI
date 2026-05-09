@@ -1,0 +1,13 @@
+.env
+*.pyc
+__pycache__/
+venv/
+.venv/
+*.db
+studyflow.db
+qdrant_data/
+.DS_Store
+dist/
+build/
+*.egg-info/
+.env
