@@ -147,21 +147,27 @@ def generate_json(
         except json.JSONDecodeError:
             pass
 
-    # Try to find any JSON object in the text
-    json_match = re.search(r"(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})", raw, re.DOTALL)
-    if json_match:
-        try:
-            return json.loads(json_match.group(1))
-        except json.JSONDecodeError:
-            pass
-
-    # Last resort: find the largest JSON-like block
-    json_match = re.search(r"(\{.*\})", raw, re.DOTALL)
-    if json_match:
-        try:
-            return json.loads(json_match.group(1))
-        except json.JSONDecodeError:
-            pass
+    # Try to find the outermost JSON object or array using find/rfind
+    try:
+        start_obj = raw.find('{')
+        start_arr = raw.find('[')
+        
+        # Determine if the outermost structure is an object or array
+        start_idx = -1
+        end_idx = -1
+        
+        if start_obj != -1 and (start_arr == -1 or start_obj < start_arr):
+            start_idx = start_obj
+            end_idx = raw.rfind('}')
+        elif start_arr != -1:
+            start_idx = start_arr
+            end_idx = raw.rfind(']')
+            
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            json_str = raw[start_idx:end_idx+1]
+            return json.loads(json_str)
+    except Exception as e:
+        logger.warning(f"Manual bounds extraction failed: {e}")
 
     logger.error(f"Failed to parse JSON from LLM response:\n{raw[:800]}")
     raise ValueError(f"Could not parse JSON from LLM response")
