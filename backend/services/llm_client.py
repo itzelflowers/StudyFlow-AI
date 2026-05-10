@@ -56,6 +56,7 @@ def chat_completion(
     """
     Send a chat completion request to the LLM via Fireworks AI.
 
+    Uses streaming for max_tokens > 4096 (Fireworks requirement).
     Handles Qwen3's thinking mode where the actual response may be in
     'reasoning_content' instead of 'content'.
     """
@@ -78,29 +79,65 @@ def chat_completion(
         "Authorization": f"Bearer {_api_key}",
     }
 
+    # Fireworks requires stream=true for max_tokens > 4096
+    use_streaming = max_tokens > 4096
+
     payload = {
         "model": _model_id,
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
         "top_p": 0.8,
+        "stream": use_streaming,
     }
 
     try:
-        # Use a generous timeout — Qwen3.6 Plus needs time for reasoning
-        with httpx.Client(timeout=httpx.Timeout(300.0, connect=30.0)) as client:
-            logger.info(f"Sending request to {_model_id}...")
-            resp = client.post(
-                f"{_base_url}/chat/completions",
-                headers=headers,
-                json=payload,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        logger.info(f"Sending {'streaming' if use_streaming else 'standard'} request to {_model_id}...")
 
-        choice = data["choices"][0]["message"]
-        content = choice.get("content")
-        reasoning = choice.get("reasoning_content", "")
+        if use_streaming:
+            content_parts = []
+            reasoning_parts = []
+
+            with httpx.Client(timeout=httpx.Timeout(300.0, connect=30.0)) as client:
+                with client.stream(
+                    "POST",
+                    f"{_base_url}/chat/completions",
+                    headers=headers,
+                    json=payload,
+                ) as resp:
+                    resp.raise_for_status()
+                    for line in resp.iter_lines():
+                        if not line or not line.startswith("data: "):
+                            continue
+                        data_str = line[6:]  # Remove "data: " prefix
+                        if data_str.strip() == "[DONE]":
+                            break
+                        try:
+                            chunk = json.loads(data_str)
+                            delta = chunk.get("choices", [{}])[0].get("delta", {})
+                            if delta.get("content"):
+                                content_parts.append(delta["content"])
+                            if delta.get("reasoning_content"):
+                                reasoning_parts.append(delta["reasoning_content"])
+                        except json.JSONDecodeError:
+                            continue
+
+            content = "".join(content_parts) if content_parts else None
+            reasoning = "".join(reasoning_parts) if reasoning_parts else ""
+
+        else:
+            with httpx.Client(timeout=httpx.Timeout(300.0, connect=30.0)) as client:
+                resp = client.post(
+                    f"{_base_url}/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+
+            choice = data["choices"][0]["message"]
+            content = choice.get("content")
+            reasoning = choice.get("reasoning_content", "")
 
         logger.info(
             f"LLM response — content: {bool(content and content.strip())}, "
