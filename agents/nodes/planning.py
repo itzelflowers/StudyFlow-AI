@@ -15,47 +15,34 @@ from backend.services.llm_client import generate_json
 
 logger = logging.getLogger(__name__)
 
-PLANNING_SYSTEM_PROMPT = """You are an expert educational planner AI. Your role is to create 
-personalized, structured study plans for learners.
-
-Given a learning goal, the learner's self-assessment, and their available time, you must:
-1. Assess their current level (beginner, intermediate, advanced)
-2. Break the topic into logical milestones (3-6 milestones)
-3. Estimate the time needed for each milestone
-4. Ensure the plan is achievable within their available hours
-
-IMPORTANT RULES:
-- Be realistic about time estimates
-- Start from fundamentals if the learner is a beginner
-- Each milestone should build on the previous one
-- Include both theory and practice in each milestone
-- Focus on mathematics topics when relevant
+PLANNING_SYSTEM_PROMPT = """You are an expert educational planner. Create concise, actionable study plans.
+Keep all text short and to the point. Use simple, clear language.
 """
 
-PLANNING_USER_PROMPT = """Create a study plan for the following learner:
+PLANNING_USER_PROMPT = """Create a study plan for:
 
-**Goal:** {goal}
-**Available Time:** {hours} hours per week
-**Target Duration:** {deadline} weeks
-**Diagnostic Responses:** {diagnostic}
+Goal: {goal}
+Hours/week: {hours}
+Weeks: {deadline}
+Diagnostic: {diagnostic}
 
-Generate a structured study plan as JSON with this exact format:
+Return ONLY this JSON (keep descriptions under 15 words, max 4 milestones, max 2 topics and 2 objectives per milestone):
 {{
-    "assessed_level": "beginner|intermediate|advanced",
-    "total_weeks": <number>,
+    "assessed_level": "beginner",
+    "total_weeks": 4,
     "milestones": [
         {{
             "id": "m1",
-            "title": "Milestone title",
-            "description": "What the learner will achieve",
+            "title": "Short title",
+            "description": "Brief description",
             "order": 1,
             "week": 1,
-            "topics": ["topic1", "topic2"],
-            "learning_objectives": ["objective1", "objective2"],
-            "estimated_hours": <number>
+            "topics": ["topic1"],
+            "learning_objectives": ["objective1"],
+            "estimated_hours": 10
         }}
     ],
-    "plan_summary": "A brief overview of the entire plan"
+    "plan_summary": "Brief overview"
 }}
 """
 
@@ -87,7 +74,7 @@ def planning_node(state: AgentState) -> dict:
     ]
 
     try:
-        result = generate_json(messages, temperature=0.6)
+        result = generate_json(messages, temperature=0.6, max_tokens=8192)
 
         return {
             "assessed_level": result.get("assessed_level", "beginner"),

@@ -16,55 +16,41 @@ from backend.services.llm_client import generate_json
 
 logger = logging.getLogger(__name__)
 
-COACHING_SYSTEM_PROMPT = """You are an expert study coach AI. Your role is to convert study plan 
-milestones into concrete, actionable daily or weekly tasks.
-
-You should create tasks that are:
-- Specific and actionable (not vague)
-- Achievable in the estimated time
-- Balanced between theory and practice
-- Progressive (building on previous tasks)
-- Include review sessions to reinforce learning
-
-IMPORTANT RULES:
-- Each task should take 25-90 minutes (Pomodoro-friendly)
-- Include "review" tasks every 3-4 days
-- Include practice/exercise tasks, not just reading/watching
-- Add specific instructions (e.g., "Watch video X and solve problems 1-5")
-- Group tasks by day number within each week
+COACHING_SYSTEM_PROMPT = """You are a study coach. Convert study plans into daily tasks.
+Keep all text concise and actionable. Each task 30-60 minutes.
 """
 
-COACHING_USER_PROMPT = """Create an actionable task schedule for the following study plan:
+COACHING_USER_PROMPT = """Create tasks for this plan:
 
-**Goal:** {goal}
-**Level:** {level}
-**Hours per week:** {hours}
-**Total weeks:** {total_weeks}
+Goal: {goal}
+Level: {level}
+Hours/week: {hours}
+Weeks: {total_weeks}
 
-**Milestones:**
+Milestones:
 {milestones}
 
-**Available Resources:**
+Resources:
 {resources}
 
-Create daily tasks. Return as JSON:
+Create max 5 tasks per week. Return ONLY this JSON:
 {{
     "tasks": [
         {{
             "id": "t1",
             "title": "Short task title",
-            "description": "Detailed instructions for what to do",
+            "description": "What to do",
             "milestone_id": "m1",
             "day": 1,
             "estimated_minutes": 45,
-            "task_type": "learn|practice|review|project",
-            "resources_used": ["Resource title 1"]
+            "task_type": "learn",
+            "resources_used": ["Resource name"]
         }}
     ],
     "weekly_summary": [
         {{
             "week": 1,
-            "focus": "What this week covers",
+            "focus": "Week focus",
             "total_tasks": 5,
             "total_hours": 10
         }}

@@ -16,46 +16,31 @@ from backend.services.llm_client import generate_json
 
 logger = logging.getLogger(__name__)
 
-RESEARCH_SYSTEM_PROMPT = """You are an expert educational resource curator. Your role is to find 
-and recommend the best learning resources for each study milestone.
-
-You should recommend a mix of:
-- Free online courses and tutorials (Khan Academy, MIT OCW, Coursera, etc.)
-- YouTube videos from reputable educators
-- Interactive exercises and practice problems
-- Textbooks and reading materials
-- Online tools and calculators
-
-IMPORTANT RULES:
-- Only recommend well-known, reputable resources
-- Include a mix of resource types (video, text, interactive)
-- Match resource difficulty to the learner's level
-- Prioritize FREE resources
-- Include estimated time to complete each resource
-- For mathematics, prioritize Khan Academy, 3Blue1Brown, MIT OCW, Paul's Online Math Notes
+RESEARCH_SYSTEM_PROMPT = """You are an educational resource curator. Recommend the best free learning resources.
+Keep all text concise. Prioritize Khan Academy, 3Blue1Brown, MIT OCW for math.
 """
 
-RESEARCH_USER_PROMPT = """Find learning resources for the following study plan:
+RESEARCH_USER_PROMPT = """Find resources for this study plan:
 
-**Overall Goal:** {goal}
-**Learner Level:** {level}
-**Milestones:**
+Goal: {goal}
+Level: {level}
+Milestones:
 {milestones}
 
-For each milestone, recommend 3-5 high-quality resources. Return as JSON:
+For each milestone, recommend exactly 2 resources. Return ONLY this JSON:
 {{
     "milestone_resources": [
         {{
             "milestone_id": "m1",
             "resources": [
                 {{
-                    "title": "Resource title",
+                    "title": "Resource name",
                     "url": "https://...",
-                    "resource_type": "video|article|exercise|course|book|tool",
-                    "difficulty": "beginner|intermediate|advanced",
-                    "description": "Brief description of what this covers",
+                    "resource_type": "video",
+                    "difficulty": "beginner",
+                    "description": "Brief description",
                     "estimated_minutes": 30,
-                    "provider": "Khan Academy|YouTube|MIT OCW|etc"
+                    "provider": "Khan Academy"
                 }}
             ]
         }}
@@ -103,7 +88,7 @@ def research_node(state: AgentState) -> dict:
     ]
 
     try:
-        result = generate_json(messages, temperature=0.7)
+        result = generate_json(messages, temperature=0.7, max_tokens=8192)
         resources = result.get("milestone_resources", [])
 
         return {

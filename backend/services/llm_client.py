@@ -61,9 +61,16 @@ def chat_completion(
     """
     _init_config()
 
+    # Deep copy messages so we don't mutate the caller's list
+    messages = [dict(m) for m in messages]
+
     if response_format == "json":
         if messages and messages[-1]["role"] == "user":
-            messages[-1]["content"] += "\n\nRespond ONLY with valid JSON. No markdown, no extra text, no thinking tags."
+            messages[-1]["content"] += (
+                "\n\nIMPORTANT: Respond ONLY with the raw JSON object. "
+                "Do NOT include markdown code blocks, explanations, or any other text. "
+                "Start your response with { and end with }."
+            )
 
     headers = {
         "Accept": "application/json",
@@ -80,7 +87,9 @@ def chat_completion(
     }
 
     try:
-        with httpx.Client(timeout=120) as client:
+        # Use a generous timeout — Qwen3.6 Plus needs time for reasoning
+        with httpx.Client(timeout=httpx.Timeout(300.0, connect=30.0)) as client:
+            logger.info(f"Sending request to {_model_id}...")
             resp = client.post(
                 f"{_base_url}/chat/completions",
                 headers=headers,
@@ -93,27 +102,87 @@ def chat_completion(
         content = choice.get("content")
         reasoning = choice.get("reasoning_content", "")
 
+        logger.info(
+            f"LLM response — content: {bool(content and content.strip())}, "
+            f"reasoning: {bool(reasoning and reasoning.strip())}"
+        )
+
         # Qwen3 thinking mode: content is null, answer is at the end of reasoning
-        if content is None or content.strip() == "":
-            if reasoning:
-                # The actual answer is usually after the thinking process
-                # Try to find JSON or the final answer in the reasoning
-                content = reasoning
-            else:
-                content = ""
+        if content and content.strip():
+            final_content = content.strip()
+        elif reasoning and reasoning.strip():
+            final_content = reasoning.strip()
+        else:
+            final_content = ""
 
         # Strip thinking tags if present
-        if "<think>" in content:
-            content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
+        if "<think>" in final_content:
+            final_content = re.sub(
+                r"<think>.*?</think>", "", final_content, flags=re.DOTALL
+            ).strip()
 
-        return content
+        return final_content
 
+    except httpx.TimeoutException as e:
+        logger.error(f"LLM request timed out after 300s")
+        raise RuntimeError("LLM request timed out. The model is taking too long to respond.") from e
     except httpx.HTTPStatusError as e:
         logger.error(f"LLM HTTP error {e.response.status_code}: {e.response.text[:200]}")
         raise RuntimeError(f"LLM request failed: {e.response.text[:200]}") from e
     except Exception as e:
         logger.error(f"LLM call failed: {e}")
         raise RuntimeError(f"Failed to get response from LLM: {e}") from e
+
+
+def _try_repair_json(raw: str) -> Optional[dict]:
+    """
+    Attempt to repair truncated JSON by closing open brackets/braces.
+    """
+    # Find the start of the JSON
+    start_obj = raw.find('{')
+    if start_obj == -1:
+        return None
+
+    json_str = raw[start_obj:]
+
+    # Count open vs close braces/brackets
+    open_braces = json_str.count('{') - json_str.count('}')
+    open_brackets = json_str.count('[') - json_str.count(']')
+
+    # If there are unclosed structures, try to close them
+    if open_braces > 0 or open_brackets > 0:
+        # Remove any trailing partial entry (incomplete string/value)
+        # Find last complete key-value pair or array element
+        last_comma = json_str.rfind(',')
+        last_brace = json_str.rfind('}')
+        last_bracket = json_str.rfind(']')
+        last_complete = max(last_comma, last_brace, last_bracket)
+
+        if last_complete > 0:
+            json_str = json_str[:last_complete]
+            # Remove trailing comma if present
+            json_str = json_str.rstrip().rstrip(',')
+
+        # Close structures
+        json_str += ']' * open_brackets + '}' * open_braces
+
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError:
+        # Try more aggressive repair: cut back further
+        for i in range(3):
+            last_comma = json_str.rfind(',')
+            if last_comma > 0:
+                json_str = json_str[:last_comma]
+                json_str = json_str.rstrip().rstrip(',')
+                open_braces = json_str.count('{') - json_str.count('}')
+                open_brackets = json_str.count('[') - json_str.count(']')
+                repaired = json_str + ']' * max(0, open_brackets) + '}' * max(0, open_braces)
+                try:
+                    return json.loads(repaired)
+                except json.JSONDecodeError:
+                    continue
+    return None
 
 
 def generate_json(
@@ -133,6 +202,8 @@ def generate_json(
         response_format="json",
     )
 
+    logger.info(f"Raw LLM output (first 300 chars): {raw[:300]}")
+
     # Try to extract JSON from the response
     try:
         return json.loads(raw)
@@ -151,23 +222,31 @@ def generate_json(
     try:
         start_obj = raw.find('{')
         start_arr = raw.find('[')
-        
-        # Determine if the outermost structure is an object or array
+
         start_idx = -1
         end_idx = -1
-        
+
         if start_obj != -1 and (start_arr == -1 or start_obj < start_arr):
             start_idx = start_obj
             end_idx = raw.rfind('}')
         elif start_arr != -1:
             start_idx = start_arr
             end_idx = raw.rfind(']')
-            
+
         if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-            json_str = raw[start_idx:end_idx+1]
+            json_str = raw[start_idx:end_idx + 1]
             return json.loads(json_str)
+    except json.JSONDecodeError:
+        logger.warning("Manual bounds extraction found text but it wasn't valid JSON")
     except Exception as e:
         logger.warning(f"Manual bounds extraction failed: {e}")
+
+    # Last resort: try to repair truncated JSON
+    logger.info("Attempting JSON repair for truncated response...")
+    repaired = _try_repair_json(raw)
+    if repaired is not None:
+        logger.info("JSON repair successful!")
+        return repaired
 
     logger.error(f"Failed to parse JSON from LLM response:\n{raw[:800]}")
     raise ValueError(f"Could not parse JSON from LLM response")
