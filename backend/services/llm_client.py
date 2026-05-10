@@ -68,9 +68,11 @@ def chat_completion(
     if response_format == "json":
         if messages and messages[-1]["role"] == "user":
             messages[-1]["content"] += (
-                "\n\nIMPORTANT: Respond ONLY with the raw JSON object. "
-                "Do NOT include markdown code blocks, explanations, or any other text. "
-                "Start your response with { and end with }."
+                "\n\nCRITICAL: Your ENTIRE response must be a single raw JSON object. "
+                "Do NOT use markdown code blocks (no ```json). "
+                "Do NOT include any explanation before or after. "
+                "Do NOT think out loud. "
+                "Start your response with { and end with }. Nothing else."
             )
 
     headers = {
@@ -144,15 +146,21 @@ def chat_completion(
             f"reasoning: {bool(reasoning and reasoning.strip())}"
         )
 
-        # Qwen3 thinking mode: content is null, answer is at the end of reasoning
+        # Qwen3 thinking mode: prefer content over reasoning
+        # reasoning_content is the internal monologue — not the final answer
         if content and content.strip():
             final_content = content.strip()
         elif reasoning and reasoning.strip():
-            final_content = reasoning.strip()
+            # Extract only what comes AFTER </think> if present
+            if "</think>" in reasoning:
+                after_think = reasoning.split("</think>")[-1].strip()
+                final_content = after_think if after_think else reasoning.strip()
+            else:
+                final_content = reasoning.strip()
         else:
             final_content = ""
 
-        # Strip thinking tags if present
+        # Strip any remaining thinking tags
         if "<think>" in final_content:
             final_content = re.sub(
                 r"<think>.*?</think>", "", final_content, flags=re.DOTALL
@@ -175,21 +183,16 @@ def _try_repair_json(raw: str) -> Optional[dict]:
     """
     Attempt to repair truncated JSON by closing open brackets/braces.
     """
-    # Find the start of the JSON
     start_obj = raw.find('{')
     if start_obj == -1:
         return None
 
     json_str = raw[start_obj:]
 
-    # Count open vs close braces/brackets
     open_braces = json_str.count('{') - json_str.count('}')
     open_brackets = json_str.count('[') - json_str.count(']')
 
-    # If there are unclosed structures, try to close them
     if open_braces > 0 or open_brackets > 0:
-        # Remove any trailing partial entry (incomplete string/value)
-        # Find last complete key-value pair or array element
         last_comma = json_str.rfind(',')
         last_brace = json_str.rfind('}')
         last_bracket = json_str.rfind(']')
@@ -197,16 +200,13 @@ def _try_repair_json(raw: str) -> Optional[dict]:
 
         if last_complete > 0:
             json_str = json_str[:last_complete]
-            # Remove trailing comma if present
             json_str = json_str.rstrip().rstrip(',')
 
-        # Close structures
         json_str += ']' * open_brackets + '}' * open_braces
 
     try:
         return json.loads(json_str)
     except json.JSONDecodeError:
-        # Try more aggressive repair: cut back further
         for i in range(3):
             last_comma = json_str.rfind(',')
             if last_comma > 0:
@@ -225,7 +225,7 @@ def _try_repair_json(raw: str) -> Optional[dict]:
 def generate_json(
     messages: list[dict],
     temperature: float = 0.6,
-    max_tokens: int = 4096,
+    max_tokens: int = 8192,  # increased: study plans are large and were getting truncated
 ) -> dict:
     """
     Generate a structured JSON response from the LLM.
@@ -241,27 +241,24 @@ def generate_json(
 
     logger.info(f"Raw LLM output (first 300 chars): {raw[:300]}")
 
-    # Try to extract JSON from the response
+    # 1. Direct parse
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
         pass
 
-    # Try to find JSON in code blocks
-    json_match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", raw, re.DOTALL)
-    if json_match:
-        try:
-            return json.loads(json_match.group(1))
-        except json.JSONDecodeError:
-            pass
+    # 2. Strip markdown code blocks
+    cleaned = re.sub(r"```(?:json)?\s*", "", raw)
+    cleaned = re.sub(r"```\s*", "", cleaned).strip()
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
 
-    # Try to find the outermost JSON object or array using find/rfind
+    # 3. Extract outermost JSON object or array
     try:
         start_obj = raw.find('{')
         start_arr = raw.find('[')
-
-        start_idx = -1
-        end_idx = -1
 
         if start_obj != -1 and (start_arr == -1 or start_obj < start_arr):
             start_idx = start_obj
@@ -269,16 +266,17 @@ def generate_json(
         elif start_arr != -1:
             start_idx = start_arr
             end_idx = raw.rfind(']')
+        else:
+            start_idx = end_idx = -1
 
         if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-            json_str = raw[start_idx:end_idx + 1]
-            return json.loads(json_str)
+            return json.loads(raw[start_idx:end_idx + 1])
     except json.JSONDecodeError:
-        logger.warning("Manual bounds extraction found text but it wasn't valid JSON")
+        logger.warning("Bounds extraction found JSON-like text but it wasn't valid")
     except Exception as e:
-        logger.warning(f"Manual bounds extraction failed: {e}")
+        logger.warning(f"Bounds extraction failed: {e}")
 
-    # Last resort: try to repair truncated JSON
+    # 4. Last resort: repair truncated JSON
     logger.info("Attempting JSON repair for truncated response...")
     repaired = _try_repair_json(raw)
     if repaired is not None:
@@ -286,4 +284,4 @@ def generate_json(
         return repaired
 
     logger.error(f"Failed to parse JSON from LLM response:\n{raw[:800]}")
-    raise ValueError(f"Could not parse JSON from LLM response")
+    raise ValueError("Could not parse JSON from LLM response")
